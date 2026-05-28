@@ -1,95 +1,68 @@
 # backend/app/routers/products.py
+
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from .. import models, schemas
-from ..database import get_db
-from ..deps import get_current_active_user
+from app import models
+from app.database import get_db
 
-router = APIRouter(prefix="/products", tags=["products"])
+router = APIRouter(
+    prefix="/products",
+    tags=["products"],
+)
 
 
-@router.get("/", response_model=List[schemas.ProductRead])
+@router.get("", response_model=List[dict])
 def list_products(
+    q: Optional[str] = Query(None, description="Search query"),
     db: Session = Depends(get_db),
-    skip: int = 0,
-    limit: int = Query(default=20, le=100),
-    q: Optional[str] = None,
 ):
-    query = db.query(models.Product).filter(models.Product.is_active.is_(True))
+    query = db.query(models.Product)
+
     if q:
-        query = query.filter(models.Product.name.ilike(f"%{q}%"))
-    products = query.offset(skip).limit(limit).all()
-    return products
+        ilike_pattern = f"%{q}%"
+        query = query.filter(models.Product.name.ilike(ilike_pattern))
+
+    products = query.order_by(models.Product.id).all()
+
+    return [
+        {
+            "id": p.id,
+            "name": p.name,
+            "description": p.description,
+            "price": float(p.price),
+            "stock": p.stock,
+            "is_active": p.is_active,
+            "created_at": p.created_at,
+        }
+        for p in products
+    ]
 
 
-@router.get("/{product_id}", response_model=schemas.ProductRead)
-def get_product(product_id: int, db: Session = Depends(get_db)):
-    product = (
+@router.get("/{product_id}", response_model=dict)
+def get_product(
+    product_id: int,
+    db: Session = Depends(get_db),
+):
+    p = (
         db.query(models.Product)
-        .filter(models.Product.id == product_id, models.Product.is_active.is_(True))
+        .filter(models.Product.id == product_id)
         .first()
     )
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found.")
-    return product
+    if not p:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found",
+        )
 
-
-@router.post(
-    "/", response_model=schemas.ProductRead, status_code=status.HTTP_201_CREATED
-)
-def create_product(
-    product_in: schemas.ProductCreate,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_active_user),
-):
-    product = models.Product(
-        name=product_in.name,
-        description=product_in.description,
-        price=product_in.price,
-        stock=product_in.stock,
-    )
-    db.add(product)
-    db.commit()
-    db.refresh(product)
-    return product
-
-
-@router.put("/{product_id}", response_model=schemas.ProductRead)
-def update_product(
-    product_id: int,
-    product_in: schemas.ProductUpdate,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_active_user),
-):
-    product = db.query(models.Product).filter(models.Product.id == product_id).first()
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found.")
-
-    update_data = product_in.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(product, field, value)
-
-    db.add(product)
-    db.commit()
-    db.refresh(product)
-    return product
-
-
-@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_product(
-    product_id: int,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_active_user),
-):
-    product = db.query(models.Product).filter(models.Product.id == product_id).first()
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found.")
-
-    # Soft delete
-    product.is_active = False
-    db.add(product)
-    db.commit()
-    return
+    return {
+        "id": p.id,
+        "name": p.name,
+        "description": p.description,
+        "price": float(p.price),
+        "stock": p.stock,
+        "is_active": p.is_active,
+        "created_at": p.created_at,
+    }

@@ -31,7 +31,7 @@ export const api = {
   // Products
   async getProducts(q?: string) {
     const query = q ? `?q=${encodeURIComponent(q)}` : "";
-    const res = await fetch(`${API_BASE}/products${query}`);
+    const res = await fetch(`${API_BASE}/products/${query}`);
     if (!res.ok) throw new Error("Failed to fetch products");
     return res.json();
   },
@@ -96,7 +96,7 @@ export const api = {
     return res.json();
   },
 
-  async getTopProducts(targetDate: string, limit: number = 5) {
+  async getTopProducts(targetDate: string, limit = 5) {
     const params = new URLSearchParams();
     params.append("target_date", targetDate);
     params.append("limit", String(limit));
