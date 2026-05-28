@@ -1,20 +1,30 @@
 # backend/app/etl_to_reporting.py
+
 from datetime import date
+from typing import Optional
+
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from backend.app.database import SessionLocal, ReportingSessionLocal, reporting_engine
-from backend.app import models
-from backend.app.reporting_models import DailySales, TopProductDaily
-from backend.app.database import Base
+from app.database import (
+    SessionLocal,
+    ReportingSessionLocal,
+    reporting_engine,
+    Base,
+)
+from app import models
+from app.reporting_models import DailySales, TopProductDaily
 
 
-def init_reporting_schema():
+def init_reporting_schema() -> None:
     # Create reporting tables only in the reporting DB
-    Base.metadata.create_all(bind=reporting_engine, tables=[DailySales.__table__, TopProductDaily.__table__])
+    Base.metadata.create_all(
+        bind=reporting_engine,
+        tables=[DailySales.__table__, TopProductDaily.__table__],
+    )
 
 
-def run_daily_etl(target_date: date | None = None):
+def run_daily_etl(target_date: Optional[date] = None) -> None:
     if target_date is None:
         target_date = date.today()
 
@@ -26,15 +36,23 @@ def run_daily_etl(target_date: date | None = None):
         init_reporting_schema()
 
         # Clear existing rows for that date (idempotent ETL)
-        reporting_db.query(DailySales).filter(DailySales.date == target_date).delete()
-        reporting_db.query(TopProductDaily).filter(TopProductDaily.date == target_date).delete()
+        reporting_db.query(DailySales).filter(
+            DailySales.date == target_date
+        ).delete()
+        reporting_db.query(TopProductDaily).filter(
+            TopProductDaily.date == target_date
+        ).delete()
 
         # Aggregate daily sales from orders + order_items
         daily_sales_row = (
             main_db.query(
                 func.count(models.Order.id).label("total_orders"),
-                func.coalesce(func.sum(models.Order.total_amount), 0).label("total_revenue"),
-                func.coalesce(func.sum(models.OrderItem.quantity), 0).label("total_items"),
+                func.coalesce(
+                    func.sum(models.Order.total_amount), 0
+                ).label("total_revenue"),
+                func.coalesce(
+                    func.sum(models.OrderItem.quantity), 0
+                ).label("total_items"),
             )
             .join(models.OrderItem, models.OrderItem.order_id == models.Order.id)
             .filter(func.date(models.Order.created_at) == target_date)
@@ -54,9 +72,14 @@ def run_daily_etl(target_date: date | None = None):
             main_db.query(
                 models.Product.id.label("product_id"),
                 models.Product.name.label("product_name"),
-                func.coalesce(func.sum(models.OrderItem.quantity), 0).label("total_quantity"),
                 func.coalesce(
-                    func.sum(models.OrderItem.quantity * models.OrderItem.unit_price), 0
+                    func.sum(models.OrderItem.quantity), 0
+                ).label("total_quantity"),
+                func.coalesce(
+                    func.sum(
+                        models.OrderItem.quantity * models.OrderItem.unit_price
+                    ),
+                    0,
                 ).label("revenue"),
             )
             .join(models.OrderItem, models.OrderItem.product_id == models.Product.id)
@@ -74,7 +97,7 @@ def run_daily_etl(target_date: date | None = None):
                 product_id=row.product_id,
                 product_name=row.product_name,
                 total_quantity=int(row.total_quantity or 0),
-                revenue=row.revenue or 0,
+                total_revenue=row.revenue or 0,
             )
             reporting_db.add(tp)
 

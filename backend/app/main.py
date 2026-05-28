@@ -3,8 +3,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.app.config import settings
-from backend.app.routers import auth, products, cart, orders, analytics
+from app.config import settings
+from app.routers import auth, products, cart, orders, analytics
 
 
 app = FastAPI(
@@ -14,8 +14,6 @@ app = FastAPI(
 )
 
 # CORS settings
-# If BACKEND_CORS_ORIGINS is set in .env as a comma-separated list,
-# we split it into a Python list. Otherwise default to ["*"].
 cors_origins = ["*"]
 if settings.backend_cors_origins:
     cors_origins = [origin.strip() for origin in settings.backend_cors_origins.split(",") if origin.strip()]

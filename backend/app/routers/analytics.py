@@ -1,12 +1,13 @@
 # backend/app/routers/analytics.py
+
 from datetime import date
 from typing import List
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from backend.app.database import get_reporting_db
-from backend.app.reporting_models import DailySales, TopProductDaily
+from app.database import get_reporting_db
+from app.reporting_models import DailySales, TopProductDaily
 
 router = APIRouter(
     prefix="/analytics",
@@ -26,7 +27,6 @@ def get_daily_sales(
         .order_by(DailySales.date)
         .all()
     )
-
     return [
         {
             "date": row.date,
@@ -51,13 +51,12 @@ def get_top_products(
         .limit(limit)
         .all()
     )
-
     return [
         {
             "product_id": row.product_id,
             "product_name": row.product_name,
             "total_quantity": row.total_quantity,
-            "revenue": float(row.revenue),
+            "revenue": float(row.total_revenue),
         }
         for row in rows
     ]

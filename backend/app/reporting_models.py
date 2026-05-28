@@ -1,6 +1,9 @@
 # backend/app/reporting_models.py
-from sqlalchemy import Column, Integer, String, Date, Numeric
-from backend.app.database import Base
+
+from sqlalchemy import Column, Date, Integer, Numeric, String
+from sqlalchemy.orm import relationship
+
+from app.database import Base
 
 
 class DailySales(Base):
@@ -21,4 +24,4 @@ class TopProductDaily(Base):
     product_id = Column(Integer, nullable=False)
     product_name = Column(String, nullable=False)
     total_quantity = Column(Integer, nullable=False)
-    revenue = Column(Numeric(12, 2), nullable=False)
+    total_revenue = Column(Numeric(12, 2), nullable=False)

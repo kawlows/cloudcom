@@ -1,4 +1,5 @@
 # backend/app/schemas.py
+
 from datetime import datetime
 from typing import List, Optional
 
@@ -64,7 +65,7 @@ class ProductUpdate(BaseModel):
 
 class ProductRead(ProductBase):
     id: int
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     model_config = {
         "from_attributes": True
