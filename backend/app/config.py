@@ -1,21 +1,33 @@
+# backend/app/config.py
+
+from functools import lru_cache
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # Main transactional DB (for app)
-    DATABASE_URL: str
-    # Reporting/analytics DB
-    REPORTING_DATABASE_URL: str
+    app_name: str = "CloudShop API"
+    app_description: str = "CloudShop E-Commerce API with reporting and analytics"
+    app_version: str = "1.0.0"
 
-    JWT_SECRET_KEY: str
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    # Database URLs
+    database_url: str
+    reporting_database_url: str
 
-    ENV: str = "dev"
+    # Security
+    secret_key: str = "CHANGE_ME"
+    access_token_expire_minutes: int = 60
+
+    # CORS
+    backend_cors_origins: str | None = None  # comma-separated list
 
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
 
 
-settings = Settings()
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()
