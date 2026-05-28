@@ -1,30 +1,25 @@
 # backend/app/database.py
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker, Session
 
-from .config import settings
-
-# Main transactional DB
-engine = create_engine(settings.DATABASE_URL, future=True)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Reporting DB (analytics)
-reporting_engine = create_engine(settings.REPORTING_DATABASE_URL, future=True)
-ReportingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=reporting_engine)
-
-Base = declarative_base()
+from backend.app.config import settings
 
 
-def get_db():
+engine = create_engine(
+    settings.database_url,
+    future=True,
+)
+
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+)
+
+
+def get_db() -> Session:
     db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-def get_reporting_db():
-    db = ReportingSessionLocal()
     try:
         yield db
     finally:
