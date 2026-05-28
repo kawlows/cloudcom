@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* global base styles using your palette */
+html,
+body,
+#root {
+  min-height: 100vh;
+}
+
+body {
+  background-color: #F1F7D4; /* cloud.light */
+  color: #4A4466; /* cloud.primary */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
